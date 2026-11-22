@@ -186,19 +186,17 @@
 
   function cardNode(c) {
     var d = el("div", "fzcard " + c.rarity);
-    var g = Number(c.glyph) || 0;
-    d.append(el("div", "rr m", c.rarity), glyphSvg(g), el("div", "sm", c.symbol), el("div", "nm", c.name), el("div", "ds m", c.description));
-    var dt = new Date(c.acquired_at);
-    var code = g.toString(16).toUpperCase().padStart(7, "0");
-    d.appendChild(el("div", "mt m", "№ " + c.serial_number + " · ГЕНОМ " + code + " · ПОЛУЧЕНА " + dt.toLocaleDateString("ru-RU") + " · ВЛАДЕЛЕЦ " + String(c.owner_id).slice(0, 8)));
+    d.append(el("div", "rr m", c.rarity), el("div", "sm", c.symbol || "✦"), el("div", "nm", c.title || "АРТЕФАКТ"), el("div", "ds m", c.description || "УНИКАЛЬНЫЙ ОБЪЕКТ FIZZAROLLIO"));
+    var dt = new Date(c.created_at || Date.now());
+    d.appendChild(el("div", "mt m", "№ " + c.serial_number + " · ПОЛУЧЕН " + dt.toLocaleDateString("ru-RU")));
     return d;
   }
 
   /* ---------- карточка: чтение и выдача ---------- */
-  var CARD_COLS = "serial_number,name,description,symbol,rarity,glyph,acquired_at,owner_id";
+  var CARD_COLS = "serial_number,title,description,symbol,rarity,created_at";
   async function refreshCard() {
     if (!session) { card = null; cardChecked = false; return; }
-    var cr = await sb.from("cards").select(CARD_COLS).maybeSingle();
+    var cr = await sb.rpc("get_my_card");
     if (!cr.error) { card = cr.data || null; cardChecked = true; }
   }
 
@@ -206,15 +204,14 @@
   function setPending(v) { try { if (v) localStorage.setItem("fz_pend", v); else localStorage.removeItem("fz_pend"); } catch (e) {} }
   function getPending() { try { return localStorage.getItem("fz_pend") || ""; } catch (e) { return ""; } }
 
-  async function claim(pw) {
-    var r = await sb.functions.invoke("claim-card", { method: "POST", body: { password: pw } });
-    if (r.error || !r.data || !r.data.card) {
-      var code = "";
-      try { var j = await r.error.context.json(); code = (j && j.error) || ""; } catch (e) {}
-      return { ok: false, code: code };
-    }
-    card = r.data.card; cardChecked = true;
-    return { ok: true, isNew: !!r.data.is_new };
+  async function awardRiddle(day, answer) {
+    if (!session) throw new Error("AUTH_REQUIRED");
+    var r = await sb.rpc("claim_card_from_riddle", { p_day: Number(day), p_answer: String(answer || "") });
+    if (r.error) throw r.error;
+    var data = r.data || {};
+    if (!data.correct) return { correct: false };
+    card = data.card || null; cardChecked = true;
+    return { correct: true, isNew: !!data.is_new, card: card, meaning: data.meaning || "" };
   }
   function failText(code) {
     if (code === "email_not_confirmed") return "СНАЧАЛА ПОДТВЕРДИ ПОЧТУ (ПИСЬМО), ПОТОМ ВВЕДИ ПАРОЛЬ ЕЩЁ РАЗ.";
@@ -267,6 +264,7 @@
   async function renderAccount(my) {
     var u = session.user;
     body.appendChild(el("h3", "", "ЛИЧНЫЙ АККАУНТ"));
+    body.appendChild(el("h3", "m", "МОЯ КОЛЛЕКЦИЯ"));
     body.appendChild(el("p", "", "ПОЧТА: " + u.email));
     var nickP = el("p", "", "НИКНЕЙМ: …"); body.appendChild(nickP);
     var holder = el("div", ""); body.appendChild(holder);
@@ -282,12 +280,13 @@
     await refreshCard();
     if (my !== rid) return;
     if (card) holder.appendChild(cardNode(card));
-    else holder.appendChild(el("p", "", "КАРТОЧКИ ПОКА НЕТ. ЕЁ ВЫДАЮТ ЗА ОТКРЫТИЕ ЗАКРЫТОГО ФАЙЛА №001 В АРХИВЕ: НАЙДИ ПАРОЛЬ И ВВЕДИ ЕГО, ПОКА ТЫ ВОШЁЛ В АККАУНТ. У КАЖДОГО ИГРОКА СВОЯ, НЕПОВТОРИМАЯ КАРТОЧКА."));
+    else holder.appendChild(el("p", "", "АРТЕФАКТ ПОКА НЕ ПОЛУЧЕН. ПЕРЕЙДИ В РАЗДЕЛ «ДРОП» И РЕШИ ЗАГАДКУ ПРАВИЛЬНО. У КАЖДОГО ИГРОКА СВОЙ УНИКАЛЬНЫЙ АРТЕФАКТ."));
   }
 
   /* маленький мост для основного скрипта сайта */
   window.FZ = {
-    afterPassword: function (pw) { return afterPassword(pw); },
+    isSignedIn: function () { return !!session; },
+    awardRiddle: function (day, answer) { return awardRiddle(day, answer); },
     wantsCard: function () { return !!(configured && session && cardChecked && !card); }
   };
 
@@ -305,11 +304,7 @@
     /* не вызываем запросы Supabase прямо внутри обработчика, поэтому setTimeout */
     setTimeout(async function () {
       if (ev === "PASSWORD_RECOVERY") { view = "recover"; open(); return; }
-      if (ev === "SIGNED_IN" && s) {
-        await refreshCard();
-        var p = getPending();
-        if (p) { afterPassword(p); return; }   /* пароль файла ждал входа: выдаём карточку */
-      }
+      if (ev === "SIGNED_IN" && s) { await refreshCard(); }
       if (box.classList.contains("on") && (ev === "SIGNED_IN" || ev === "SIGNED_OUT")) { if (ev === "SIGNED_IN") view = "login"; render(); }
     }, 0);
   });
@@ -328,6 +323,6 @@
 
   sb.auth.getSession().then(function (r) {
     session = r.data.session; setBtn();
-    return refreshCard().then(function () { var p = getPending(); if (session && p) afterPassword(p); });
+    return refreshCard();
   });
 })();
