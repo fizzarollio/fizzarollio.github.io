@@ -1,7 +1,6 @@
 /* FIZZAROLLIO · публичные настройки подключения к Supabase.
-   Сюда вставляются ТОЛЬКО два публичных значения (см. инструкцию, шаг 3).
-   НИКОГДА не вставляйте сюда service_role / secret ключ. */
+   Здесь используются только публичные значения. Никогда не помещайте сюда secret/service_role. */
 window.FZ_CONFIG = {
-  SUPABASE_URL: "",       // например: https://abcdxyz.supabase.co
-  SUPABASE_ANON_KEY: ""   // ключ "anon public" (или "Publishable key")
+  SUPABASE_URL: "https://gqpiiioyhwscbxivufre.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_Onx8qhLqEZuws9Y26ObhTg_Mpd8lwqB"
 };
