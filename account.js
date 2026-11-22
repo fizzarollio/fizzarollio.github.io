@@ -174,10 +174,15 @@
     f.append(pw, sub, er);
     f.onsubmit = async function (e) {
       e.preventDefault(); if (busy) return; lock(sub, true); msg("");
-      var r = await sb.auth.updateUser({ password: pw.value });
-      lock(sub, false);
-      if (r.error) return msg(human(r.error));
-      view = "login"; say("ПАРОЛЬ ИЗМЕНЁН."); render();
+      try {
+        var r = await sb.auth.updateUser({ password: pw.value });
+        if (r.error) { msg(human(r.error)); return; }
+        view = "login"; say("ПАРОЛЬ ИЗМЕНЁН."); render();
+      } catch (err) {
+        msg(human(err));
+      } finally {
+        lock(sub, false);
+      }
     };
     body.appendChild(f);
   }
@@ -210,7 +215,7 @@
   }
 
   /* ---------- карточка: чтение и выдача ---------- */
-  var CARD_COLS = "serial_number,title,description,symbol,rarity,created_at";
+  var CARD_COLS = "serial_number,title,description,symbol,rarity,created_at,traits";
   async function refreshCard() {
     if (!session) { card = null; cardChecked = false; return; }
     var cr = await sb.rpc("get_my_card");
@@ -263,13 +268,8 @@
       var isNew = false;
       if (!card) {
         put(el("p", "", "ВЫДАЮ КАРТОЧКУ…"));
-        var r = await claim(pw);
-        if (!r.ok) {
-          if (r.code === "wrong_password") setPending(null);
-          put(el("p", "err", failText(r.code))); return;
-        }
-        isNew = r.isNew;
-        try { flash(); } catch (e) {}
+        put(el("p", "err", "АРТЕФАКТ ВЫДАЁТСЯ ЗА ПРАВИЛЬНЫЙ ОТВЕТ В РАЗДЕЛЕ «ДРОП». ОТКРОЙ ЗАГАДКУ И ОТПРАВЬ ОТВЕТ ТАМ."));
+        return;
       }
       setPending(null);
       say(isNew ? "КАРТОЧКА ПОЛУЧЕНА." : "ЭТО УЖЕ ТВОЯ КАРТОЧКА.", 3200);
@@ -290,9 +290,10 @@
     out.onclick = async function () { setPending(null); await sb.auth.signOut(); card = null; cardChecked = false; view = "login"; render(); say("СЕАНС ЗАВЕРШЁН."); };
     body.appendChild(out);
 
-    var pr = await sb.from("profiles").select("nickname").eq("id", u.id).maybeSingle();
+    var pr = await sb.from("luneo_profiles").select("username,display_name").eq("id", u.id).maybeSingle();
     if (my !== rid) return;
-    if (pr.data) nickP.textContent = "НИКНЕЙМ: " + pr.data.nickname;
+    if (pr.data) nickP.textContent = "НИКНЕЙМ: " + (pr.data.username || pr.data.display_name || "УЧАСТНИК");
+    else nickP.textContent = "НИКНЕЙМ: УЧАСТНИК";
 
     await refreshCard();
     if (my !== rid) return;
