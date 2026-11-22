@@ -99,10 +99,19 @@
     f.lastChild.id = "accm";
     f.onsubmit = async function (e) {
       e.preventDefault(); if (busy) return; lock(sub, true); msg("");
-      var r = await sb.auth.signInWithPassword({ email: em.value.trim(), password: pw.value });
-      lock(sub, false);
-      if (r.error) return msg(human(r.error));
-      say("ДОСТУП РАЗРЕШЁН.");
+      try {
+        var r = await sb.auth.signInWithPassword({ email: em.value.trim(), password: pw.value });
+        if (r.error) { msg(human(r.error)); return; }
+        say("ДОСТУП РАЗРЕШЁН.");
+        view = "login";
+        await refreshCard();
+        setBtn();
+        render();
+      } catch (err) {
+        msg(human(err));
+      } finally {
+        lock(sub, false);
+      }
     };
     body.append(f, link("НЕТ АККАУНТА? РЕГИСТРАЦИЯ", "register"), link("ЗАБЫЛ ПАРОЛЬ?", "forgot"));
   }
@@ -120,11 +129,13 @@
       var nick = nk.value.replace(/[<>&"']/g, "").trim();
       if (nick.length < 2) return msg("НИКНЕЙМ СЛИШКОМ КОРОТКИЙ.");
       lock(sub, true);
-      var r = await sb.auth.signUp({ email: em.value.trim(), password: pw.value,
-        options: { emailRedirectTo: redirectUrl(), data: { nickname: nick } } });
-      lock(sub, false);
-      if (r.error) return msg(human(r.error));
-      view = "sent"; render();
+      try {
+        var r = await sb.auth.signUp({ email: em.value.trim(), password: pw.value,
+          options: { emailRedirectTo: redirectUrl(), data: { nickname: nick } } });
+        if (r.error) { msg(human(r.error)); return; }
+        view = "sent"; render();
+      } catch (err) { msg(human(err)); }
+      finally { lock(sub, false); }
     };
     body.append(f, link("УЖЕ ЕСТЬ АККАУНТ? ВХОД", "login"));
   }
@@ -144,10 +155,12 @@
     f.append(em, sub, er);
     f.onsubmit = async function (e) {
       e.preventDefault(); if (busy) return; lock(sub, true); msg("");
-      var r = await sb.auth.resetPasswordForEmail(em.value.trim(), { redirectTo: redirectUrl() });
-      lock(sub, false);
-      if (r.error) return msg(human(r.error));
-      msg("ЕСЛИ ТАКАЯ ПОЧТА ЕСТЬ, МЫ ОТПРАВИЛИ ПИСЬМО СО ССЫЛКОЙ.", true);
+      try {
+        var r = await sb.auth.resetPasswordForEmail(em.value.trim(), { redirectTo: redirectUrl() });
+        if (r.error) { msg(human(r.error)); return; }
+        msg("ЕСЛИ ТАКАЯ ПОЧТА ЕСТЬ, МЫ ОТПРАВИЛИ ПИСЬМО СО ССЫЛКОЙ.", true);
+      } catch (err) { msg(human(err)); }
+      finally { lock(sub, false); }
     };
     body.append(f, link("НАЗАД", "login"));
   }
@@ -185,8 +198,12 @@
   }
 
   function cardNode(c) {
-    var d = el("div", "fzcard " + c.rarity);
-    d.append(el("div", "rr m", c.rarity), el("div", "sm", c.symbol || "✦"), el("div", "nm", c.title || "АРТЕФАКТ"), el("div", "ds m", c.description || "УНИКАЛЬНЫЙ ОБЪЕКТ FIZZAROLLIO"));
+    var rarityNames = { COMMON: "ОБЫЧНАЯ", UNCOMMON: "НЕОБЫЧНАЯ", RARE: "РЕДКАЯ", EPIC: "ЭПИЧЕСКАЯ", LEGENDARY: "ЛЕГЕНДАРНАЯ", ANOMALY: "АНОМАЛИЯ" };
+    var d = el("div", "fzcard " + String(c.rarity || "COMMON").toUpperCase());
+    d.appendChild(el("div", "rr m", rarityNames[String(c.rarity || "COMMON").toUpperCase()] || "ОБЫЧНАЯ"));
+    var seed = c.traits && c.traits.x != null ? Number(c.traits.x) : 0;
+    d.appendChild(glyphSvg(seed));
+    d.append(el("div", "sm", c.symbol || "✦"), el("div", "nm", c.title || "АРТЕФАКТ"), el("div", "ds m", c.description || "УНИКАЛЬНЫЙ ОБЪЕКТ FIZZAROLLIO"));
     var dt = new Date(c.created_at || Date.now());
     d.appendChild(el("div", "mt m", "№ " + c.serial_number + " · ПОЛУЧЕН " + dt.toLocaleDateString("ru-RU")));
     return d;
