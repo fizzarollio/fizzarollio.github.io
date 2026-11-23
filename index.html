@@ -21,7 +21,7 @@ body.dist .v.on{animation:dst 2s infinite}
 @keyframes dst{0%,100%{filter:none}50%{filter:hue-rotate(80deg) saturate(1.8) contrast(1.2)}}
 #bar{position:fixed;z-index:50;top:0;left:0;right:0;padding:calc(var(--st) + 8px) 12px 8px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:10px;color:var(--sv);text-shadow:0 0 6px #000}
 #bar b{color:var(--pk)}
-#hud{display:none;border:1px solid var(--pk);padding:3px 7px;background:rgba(8,7,10,.7);color:#fff}#hud.on{display:block}#hud i{font-style:normal;opacity:.25}#hud i.l{opacity:1;color:var(--pk);text-shadow:0 0 8px var(--pk)}#hud.rdy{animation:pu 1.2s infinite;cursor:pointer}
+#hud{display:none;border:1px solid var(--pk);padding:3px 7px;background:rgba(8,7,10,.7);color:#fff}#hud.on{display:block}#hud i{font-style:normal;opacity:.25}#hud i.l{opacity:1;color:var(--pk);text-shadow:0 0 8px var(--pk)}#hud.rdy{animation:none;cursor:pointer}
 #nav{position:fixed;z-index:50;left:0;right:0;bottom:0;padding:8px 8px calc(var(--sb) + 8px);display:flex;gap:6px;justify-content:center;background:linear-gradient(0deg,#000 40%,transparent)}
 #nav button{flex:1;max-width:150px;padding:11px 2px;font-size:11px;text-transform:uppercase;color:var(--sv);border:1px solid #ffffff33;background:rgba(21,18,25,.8);clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);min-height:44px}
 #nav button.on{color:#000;background:linear-gradient(180deg,#fff,var(--sv) 50%,var(--pk));box-shadow:0 0 20px var(--pk)}
