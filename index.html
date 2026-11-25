@@ -203,13 +203,8 @@ body.opened #archive .term{border-color:#ff2a3a;box-shadow:inset 0 0 40px #ff2a3
 #fz-winter .fz-garland i:nth-child(3n + 1){background:#ffe58b;color:#ffe58b;animation-delay:-1.1s}
 #fz-winter .fz-garland i:nth-child(3n + 2){background:#b5ffbf;color:#b5ffbf;animation-delay:-.2s}
 @keyframes fzBlink{from{opacity:.48;filter:brightness(.8)}to{opacity:1;filter:brightness(1.5)}}
-#fz-winter .fz-tree{position:absolute;bottom:calc(var(--sb) + 76px);width:35px;height:49px;opacity:.82;filter:drop-shadow(0 0 8px #8be7ff66)}
-#fz-winter .fz-tree:before{content:"";position:absolute;inset:5px 0 4px;background:linear-gradient(135deg,#a8f2d1,#1e795b 58%,#0b332c);clip-path:polygon(50% 0,16% 39%,33% 39%,0 76%,38% 76%,38% 100%,62% 100%,62% 76%,100% 76%,67% 39%,84% 39%)}
-#fz-winter .fz-tree:after{content:"✦";position:absolute;top:-3px;left:13px;color:#ffe58b;font:12px Arial;text-shadow:0 0 8px #ffe58b}
-#fz-winter .fz-tree-left{left:8px}
-#fz-winter .fz-tree-right{right:8px;transform:scale(.82);transform-origin:bottom right}
+@media(max-width:520px){#fz-winter .fz-garland{left:1%;right:1%}}
 @media(prefers-reduced-motion:reduce){#fz-winter .fz-snow,#fz-winter .fz-garland i{animation:none!important}#fz-winter .fz-snow{opacity:.22}}
-@media(max-width:520px){#fz-winter .fz-garland{left:1%;right:1%}#fz-winter .fz-tree{transform:scale(.72);transform-origin:bottom left}#fz-winter .fz-tree-right{transform:scale(.65);transform-origin:bottom right}}
 
 /* FIZZAROLLIO // WINTER EVENT */
 #winterFX{position:fixed;inset:0;z-index:96;pointer-events:none;overflow:hidden}
